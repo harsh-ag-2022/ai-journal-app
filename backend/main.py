@@ -100,7 +100,9 @@ def analyze_journal(request: AnalyzeRequest):
     
     prompt = f"""
     Analyze the following journal entry. 
-    Provide an overall emotion, a list of up to 5 keywords, and a short summary (1-2 sentences).
+    1. Overall Emotion: Choose a single defining emotion.
+    2. Keywords: Provide an array of up to 5 keywords. TRICLY RESTRICT THESE keywords to emotive shifts, emotional states, mental well-being, or deep psychological themes. DO NOT include random nouns, places, people, or plain descriptive verbs. (e.g. use "Grief", "Resilience", "Anxiety" instead of "Dog", "Work", "Running").
+    3. Summary: Provide a short, insightful summary (1-2 sentences).
     
     Journal Entry:
     {request.text}
@@ -132,7 +134,8 @@ def get_insights(userId: str, supabase: Client = Depends(get_supabase)):
              "totalEntries": 0,
              "topEmotion": None,
              "mostUsedAmbience": None,
-             "recentKeywords": []
+             "recentKeywords": [],
+             "timeline": []
          }
          
     total_entries = len(entries)
@@ -145,21 +148,64 @@ def get_insights(userId: str, supabase: Client = Depends(get_supabase)):
     ambiences = [e.get("ambience") for e in entries if e.get("ambience")]
     most_used_ambience = max(set(ambiences), key=ambiences.count) if ambiences else None
     
-    # Collect recent keywords (from the last 5 entries, assuming list might be chronologically ordered or we just take the last 5)
-    # We should sort by id or created_at if it exists, but we'll just reverse the array
-    recent_entries = list(reversed(entries))[:5]
+    # Sort entries chronologically by created_at (or id if not present) for timeline/recent extraction
+    # Defaulting to sorting by id if created_at is missing, though Supabase generally guarantees created_at
+    sorted_entries = sorted(entries, key=lambda x: x.get("created_at") or x.get("id"))
+    
+    # Nominal scoring for visualization
+    emotion_scores = {
+        "joy": 5, "excited": 5, "confident": 5, "inspired": 5, "euphoric": 5,
+        "calm": 4, "peaceful": 4, "relaxed": 4, "content": 4, "grateful": 4,
+        "neutral": 3, "contemplative": 3, "focused": 3, "reflective": 3,
+        "sad": 2, "melancholy": 2, "tired": 2, "lonely": 2, "nostalgic": 2,
+        "anxious": 1, "stressed": 1, "angry": 1, "frustrated": 1, "overwhelmed": 1,
+        "fearful": 1
+    }
+    
+    timeline = []
+    from datetime import datetime
+    for entry in sorted_entries:
+        raw_date = entry.get("created_at")
+        date_str = "Unknown"
+        if raw_date:
+            try:
+                # Assuming standard ISO format from Supabase e.g. "2023-11-20T12:00:00+00:00"
+                # Strip fractional seconds and timezone for simplified parsing
+                time_str = raw_date.split('.')[0] 
+                time_str = time_str.replace('Z', '')
+                if '+' in time_str:
+                    time_str = time_str.split('+')[0]
+                dt = datetime.fromisoformat(time_str)
+                date_str = dt.strftime("%b %d")
+            except Exception:
+                pass
+                
+        emotion = entry.get("emotion", "neutral").lower()
+        score = emotion_scores.get(emotion, 3) # default to 3 if unknown
+        
+        timeline.append({
+            "date": date_str,
+            "emotion": entry.get("emotion", "Neutral").capitalize(),
+            "score": score
+        })
+
+    # Collect recent keywords (from the last 5 entries)
+    # Using python list slicing without reversing generator to satisfy type checkers
+    sorted_entries_list = list(sorted_entries)
+    recent_entries = sorted_entries_list[-5:]
+    recent_entries.reverse()
+    
     recent_keywords = []
     for entry in recent_entries:
         if entry.get("keywords"):
             recent_keywords.extend(entry.get("keywords"))
             
-    # Deduplicate keeping order or just a unique set of recent keywords
-    # Just return up to 10 unique keywords
     unique_recent_keywords = list(dict.fromkeys(recent_keywords))[:10]
     
     return {
         "totalEntries": total_entries,
         "topEmotion": top_emotion,
         "mostUsedAmbience": most_used_ambience,
-        "recentKeywords": unique_recent_keywords
+        "recentKeywords": unique_recent_keywords,
+        "timeline": timeline
     }

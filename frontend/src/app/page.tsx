@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Send, Sparkles, User, FileText, ChevronRight, BarChart, Trash2, Sun, Moon, ChevronDown } from "lucide-react";
+import { Send, Sparkles, User, FileText, ChevronRight, BarChart, Trash2, Sun, Moon, ChevronDown, Activity } from "lucide-react";
 import { useTheme } from "next-themes";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 export default function Home() {
   const [entry, setEntry] = useState("");
@@ -119,14 +120,44 @@ export default function Home() {
 
   const ambiences = ["forest", "ocean", "space", "rain", "cafe"];
 
-  // Dynamic styling mapping based on ambience
-  const ambienceStyles: Record<string, { bg1: string, bg2: string, button: string, text: string }> = {
-    forest: { bg1: "bg-emerald-300/40 dark:bg-emerald-600/20", bg2: "bg-green-300/40 dark:bg-blue-600/20", button: "from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 shadow-emerald-500/30 dark:shadow-emerald-900/40 text-white", text: "text-emerald-700 dark:text-emerald-400" },
-    ocean: { bg1: "bg-cyan-300/40 dark:bg-cyan-600/20", bg2: "bg-blue-300/40 dark:bg-blue-700/20", button: "from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-cyan-500/30 dark:shadow-cyan-900/40 text-white", text: "text-cyan-700 dark:text-cyan-400" },
-    space: { bg1: "bg-purple-300/40 dark:bg-purple-600/20", bg2: "bg-indigo-300/40 dark:bg-indigo-600/20", button: "from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 shadow-purple-500/30 dark:shadow-purple-900/40 text-white", text: "text-purple-700 dark:text-purple-400" },
-    rain: { bg1: "bg-slate-300/50 dark:bg-slate-600/30", bg2: "bg-blue-300/40 dark:bg-blue-900/20", button: "from-slate-500 to-blue-600 hover:from-slate-400 hover:to-blue-500 shadow-slate-500/30 dark:shadow-slate-900/40 text-white", text: "text-slate-700 dark:text-slate-400" },
-    cafe: { bg1: "bg-orange-300/40 dark:bg-orange-700/20", bg2: "bg-amber-300/40 dark:bg-amber-900/20", button: "from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 shadow-orange-500/30 dark:shadow-orange-900/40 text-white", text: "text-orange-700 dark:text-orange-400" },
-  };
+  // Theme mapping for different ambiences
+  const ambienceStyles: Record<string, any> = {
+  forest: {
+    bg1: "bg-emerald-500",
+    bg2: "bg-green-400",
+    text: "text-emerald-500",
+    button: "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/25",
+    chartColor: "#10b981", // emerald-500
+  },
+  ocean: {
+    bg1: "bg-blue-500",
+    bg2: "bg-cyan-400",
+    text: "text-blue-500",
+    button: "bg-blue-500 hover:bg-blue-600 shadow-blue-500/25",
+    chartColor: "#3b82f6", // blue-500
+  },
+  space: {
+    bg1: "bg-purple-500",
+    bg2: "bg-fuchsia-400",
+    text: "text-purple-500",
+    button: "bg-purple-500 hover:bg-purple-600 shadow-purple-500/25",
+    chartColor: "#a855f7", // purple-500
+  },
+  rain: {
+    bg1: "bg-slate-500",
+    bg2: "bg-gray-400",
+    text: "text-slate-500",
+    button: "bg-slate-500 hover:bg-slate-600 shadow-slate-500/25",
+    chartColor: "#64748b", // slate-500
+  },
+  cafe: {
+    bg1: "bg-amber-500",
+    bg2: "bg-orange-400",
+    text: "text-amber-500",
+    button: "bg-amber-500 hover:bg-amber-600 shadow-amber-500/25",
+    chartColor: "#f59e0b", // amber-500
+  }
+};
 
   const currentStyle = ambienceStyles[ambience] || ambienceStyles.forest;
 
@@ -320,7 +351,63 @@ export default function Home() {
                     {insights?.mostUsedAmbience || "N/A"}
                   </div>
                 </div>
+             </div>
 
+            {/* Mindset Timeline Chart */}
+            {insights?.timeline && insights.timeline.length > 0 && (
+              <div className="mt-8">
+                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Activity className={`w-4 h-4 transition-colors duration-500 ${currentStyle.text}`} />
+                  Emotional Trajectory
+                </h4>
+                <div className="h-[200px] w-full bg-white/40 dark:bg-black/20 rounded-2xl border border-white dark:border-white/5 p-4 py-6 shadow-inner">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={insights.timeline} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={currentStyle.chartColor} stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor={currentStyle.chartColor} stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis 
+                        dataKey="date" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 12 }} 
+                        dy={10}
+                      />
+                      <YAxis 
+                        domain={[1, 5]} 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={false} 
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: theme === 'dark' ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)', 
+                          borderRadius: '12px',
+                          border: 'none',
+                          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+                        }}
+                        itemStyle={{ color: theme === 'dark' ? '#e2e8f0' : '#1e293b', fontWeight: 'bold' }}
+                        labelStyle={{ color: '#64748b', marginBottom: '4px' }}
+                        formatter={(value: any, name: any, props: any) => [props.payload.emotion, 'State']}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="score" 
+                        stroke={currentStyle.chartColor} 
+                        strokeWidth={3}
+                        fillOpacity={1} 
+                        fill="url(#colorScore)" 
+                        activeDot={{ r: 6, fill: currentStyle.chartColor, stroke: '#fff', strokeWidth: 2 }}
+                        style={{ transition: 'all 0.5s ease-in-out' }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
                 {insights?.recentKeywords && insights.recentKeywords.length > 0 && (
                   <div className="pt-2 border-t border-slate-200 dark:border-white/10">
                     <div className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-3">Recurring Themes</div>
@@ -333,7 +420,6 @@ export default function Home() {
                     </div>
                   </div>
                 )}
-             </div>
           </div>
         </div>
 
