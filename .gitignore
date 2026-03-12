@@ -37,3 +37,29 @@ yarn-error.log*
 # OS Files
 .DS_Store
 Thumbs.db
+.AppleDouble
+.LSOverride
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.sublime-workspace
+
+# Python
+*.egg-info/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+*.egg
+dist/
+build/
+
+# Docker
+.docker/

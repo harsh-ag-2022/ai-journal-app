@@ -85,6 +85,14 @@ def get_user_entries(userId: str, supabase: Client = Depends(get_supabase)):
     response = supabase.table("journal_entries").select("*").eq("userId", userId).execute()
     return response.data
 
+@app.delete("/api/journal/entries/{entry_id}")
+def delete_journal_entry(entry_id: str, supabase: Client = Depends(get_supabase)):
+    try:
+        response = supabase.table("journal_entries").delete().eq("id", entry_id).execute()
+        return {"message": "Entry deleted successfully", "data": response.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete entry: {str(e)}")
+
 @app.post("/api/journal/analyze", response_model=AnalyzeResponse)
 def analyze_journal(request: AnalyzeRequest):
     if not gemini_client:
