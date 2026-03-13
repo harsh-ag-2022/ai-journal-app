@@ -90,6 +90,15 @@ The frontend will be available at `http://localhost:3000`. You can now open this
 
 ---
 
+## 🌐 Live Deployment
+The application has been successfully deployed to the cloud:
+- **Frontend (Vercel)**: [https://ai-journal-app-rouge.vercel.app/](https://ai-journal-app-rouge.vercel.app/)
+- **Backend (Render)**: `https://arvyax-backend-avam.onrender.com`
+
+*Note: The Render backend is utilizing their free tier, meaning initial requests may take 30-40 seconds to spin up from a cold start if the server has been asleep.* 
+
+---
+
 ## 🐋 Docker Setup (Alternative)
 You can run the entire stack using Docker Compose. See the `docker-compose.yml` file in the root for details.
 
