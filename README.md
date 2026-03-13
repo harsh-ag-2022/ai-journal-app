@@ -1,5 +1,7 @@
 # AI-Assisted Journal System - ArvyaX
 
+🚀 **[Live Demo](https://ai-journal-app-rouge.vercel.app/)** | 💻 **[GitHub Repository](https://github.com/harsh-ag-2022/ai-journal-app)** 
+
 A full-stack daily journaling application that leverages generative AI to analyze user entries, extract emotions, and provide mindset insights.
 
 ## Tech Stack
@@ -7,6 +9,11 @@ A full-stack daily journaling application that leverages generative AI to analyz
 - **Backend**: Python FastAPI, Uvicorn
 - **Database**: Supabase (PostgreSQL)
 - **AI / LLM**: Google Gemini (via `google-genai` SDK)
+
+## ✨ Advanced Features
+- **Intelligent Caching (SHA-256)**: Hashes incoming journal entries and queries a Supabase cache table to return identical previous analysis instantly, zeroing out LLM processing latency and API costs for repeated text.
+- **Progressive UI Streaming**: Uses FastAPI `StreamingResponse` and Server-Sent Events (SSE) to deliver the AI's emotional summary word-by-word to the Next.js frontend, drastically reducing perceived latency.
+- **Endpoint Rate Limiting**: Employs `slowapi` to restrict the expensive `/analyze` LLM endpoint to 5 requests per minute per IP, preventing backend abuse and providing elegant HTTP 429 UI feedback.
 
 ---
 
