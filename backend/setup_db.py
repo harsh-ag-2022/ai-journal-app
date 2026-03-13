@@ -28,6 +28,12 @@ CREATE TABLE journal_entries (
   summary text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+CREATE TABLE analysis_cache (
+  text_hash text primary key,
+  response_json jsonb not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
 ''')
 print("\n2) Or use the psycopg2 library to connect directly to the Postgres database if you have the connection string.")
 

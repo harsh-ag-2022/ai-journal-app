@@ -1,0 +1,10 @@
+__pycache__
+venv
+.env
+*.pyc
+.pytest_cache
+test_env.py
+debug_error.py
+verify_backend.py
+test_cors.py
+uvicorn_log.txt

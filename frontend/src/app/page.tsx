@@ -14,6 +14,8 @@ export default function Home() {
   const [insights, setInsights] = useState<any>(null);
   const [recentEntries, setRecentEntries] = useState<any[]>([]);
   const [expandedEntryId, setExpandedEntryId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [streamingSummary, setStreamingSummary] = useState("");
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -22,7 +24,7 @@ export default function Home() {
   }, []);
 
   // The FastAPI backend runs on 8000 by default (from uvicorn)
-  const API_URL = "http://localhost:8000/api/journal";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/journal";
 
   const fetchInsights = async () => {
     try {
@@ -71,6 +73,8 @@ export default function Home() {
     if (!entry.trim()) return;
 
     setIsAnalyzing(true);
+    setErrorMessage("");
+    setStreamingSummary("");
     let emotionData = { emotion: "", keywords: [], summary: "" };
 
     // 1. Analyze with Gemini
@@ -82,12 +86,56 @@ export default function Home() {
       });
 
       if (analyzeRes.ok) {
-        emotionData = await analyzeRes.json();
+        const reader = analyzeRes.body?.getReader();
+        const decoder = new TextDecoder();
+        let fullText = "";
+
+        if (reader) {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunkStr = decoder.decode(value, { stream: true });
+            const lines = chunkStr.split('\n');
+            
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const dataStr = line.slice(6);
+                if (dataStr.trim() === '') continue;
+                
+                fullText += dataStr;
+                
+                try {
+                  const summaryMatch = fullText.match(/"summary"\s*:\s*"((?:[^"\\]|\\.)*)/);
+                  if (summaryMatch && summaryMatch[1]) {
+                      setStreamingSummary(summaryMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"'));
+                  }
+                } catch(e) {}
+              }
+            }
+          }
+        }
+        
+        try {
+          emotionData = JSON.parse(fullText);
+        } catch(e) {
+          console.error("Failed to parse final JSON", fullText);
+        }
+      } else if (analyzeRes.status === 429) {
+        setErrorMessage("You're analyzing too fast! Please wait a moment.");
+        setIsAnalyzing(false);
+        return;
       } else {
         console.error("Analysis failed");
+        setErrorMessage("Analysis failed. Please try again.");
+        setIsAnalyzing(false);
+        return;
       }
     } catch (e) {
       console.error("Error calling analyze API", e);
+      setErrorMessage("Network error. Please try again.");
+      setIsAnalyzing(false);
+      return;
     }
 
     setIsAnalyzing(false);
@@ -109,6 +157,7 @@ export default function Home() {
       });
       
       setEntry("");
+      setStreamingSummary("");
       fetchEntries();
       fetchInsights();
     } catch (e) {
@@ -231,6 +280,25 @@ export default function Home() {
               placeholder="What's on your mind today? Let the words flow..."
               className="w-full bg-white/50 dark:bg-black/40 border border-slate-200/60 dark:border-white/5 rounded-2xl p-5 min-h-[300px] outline-none focus:bg-white focus:dark:bg-black/60 focus:border-slate-300 focus:dark:border-white/20 transition-all duration-300 resize-y text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-lg leading-relaxed shadow-inner"
             />
+
+            {streamingSummary && isAnalyzing && (
+              <div className="mt-3 p-5 rounded-2xl bg-white/80 dark:bg-[#151822] border border-slate-200/60 dark:border-white/10 shadow-lg shadow-slate-200/50 dark:shadow-none animate-in slide-in-from-top-2 fade-in duration-300 backdrop-blur-xl">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className={`w-4 h-4 ${currentStyle.text} animate-pulse`} />
+                  <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Analyzing & Synchronizing...</h4>
+                </div>
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed min-h-[40px] border-l-2 pl-3 border-emerald-400 dark:border-emerald-500/50 italic">
+                  "{streamingSummary}"
+                </p>
+              </div>
+            )}
+
+            {errorMessage && (
+              <div className="mt-3 p-4 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium flex items-center justify-between animate-in slide-in-from-top-2 fade-in duration-300">
+                <span>{errorMessage}</span>
+                <button onClick={() => setErrorMessage("")} className="text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-colors text-lg font-bold">×</button>
+              </div>
+            )}
 
             <div className="mt-4 flex justify-end">
               <button

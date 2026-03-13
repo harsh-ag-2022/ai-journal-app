@@ -1,6 +1,12 @@
 import os
-from fastapi import FastAPI, HTTPException, Depends
+import hashlib
+import json
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from pydantic import BaseModel
 from typing import List, Optional
 from supabase import create_client, Client
@@ -12,10 +18,14 @@ load_dotenv(override=True)
 
 app = FastAPI(title="AI Journal App API")
 
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # Setup CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # For development
+    allow_origins=["*"], # Allow Vercel frontend to contact Render backend
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -93,11 +103,25 @@ def delete_journal_entry(entry_id: str, supabase: Client = Depends(get_supabase)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete entry: {str(e)}")
 
-@app.post("/api/journal/analyze", response_model=AnalyzeResponse)
-def analyze_journal(request: AnalyzeRequest):
+@app.post("/api/journal/analyze")
+@limiter.limit("5/minute")
+def analyze_journal(request: Request, body: AnalyzeRequest, supabase: Client = Depends(get_supabase)):
     if not gemini_client:
         raise HTTPException(status_code=500, detail="Gemini API is not configured.")
+        
+    text_hash = hashlib.sha256(body.text.encode('utf-8')).hexdigest()
     
+    # Check cache first
+    try:
+        cache_response = supabase.table("analysis_cache").select("response_json").eq("text_hash", text_hash).execute()
+        if cache_response.data and len(cache_response.data) > 0:
+            cached_json = cache_response.data[0]["response_json"]
+            async def cached_stream():
+                yield f"data: {json.dumps(cached_json)}\n\n"
+            return StreamingResponse(cached_stream(), media_type="text/event-stream")
+    except Exception as e:
+        print(f"Failed to read from cache: {e}")
+
     prompt = f"""
     Analyze the following journal entry. 
     1. Overall Emotion: Choose a single defining emotion.
@@ -105,11 +129,11 @@ def analyze_journal(request: AnalyzeRequest):
     3. Summary: Provide a short, insightful summary (1-2 sentences).
     
     Journal Entry:
-    {request.text}
+    {body.text}
     """
     
     try:
-        response = gemini_client.models.generate_content(
+        response_stream = gemini_client.models.generate_content_stream(
             model='gemini-2.5-flash',
             contents=prompt,
             config=types.GenerateContentConfig(
@@ -118,10 +142,27 @@ def analyze_journal(request: AnalyzeRequest):
             ),
         )
         
-        import json
-        result = json.loads(response.text)
-        return AnalyzeResponse(**result)
+        async def stream_generator():
+            full_response = ""
+            for chunk in response_stream:
+                if chunk.text:
+                    full_response += chunk.text
+                    yield f"data: {chunk.text}\n\n"
+            
+            # Save to cache when done
+            try:
+                result = json.loads(full_response)
+                supabase.table("analysis_cache").insert({
+                    "text_hash": text_hash,
+                    "response_json": result
+                }).execute()
+            except Exception as e:
+                print(f"Failed to write to cache or parse json: {e}")
+                
+        return StreamingResponse(stream_generator(), media_type="text/event-stream")
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/journal/insights/{userId}")
