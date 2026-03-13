@@ -97,28 +97,28 @@ export default function Home() {
 
             const chunkStr = decoder.decode(value, { stream: true });
             const lines = chunkStr.split('\n');
-            
+
             for (const line of lines) {
               if (line.startsWith('data: ')) {
                 const dataStr = line.slice(6);
                 if (dataStr.trim() === '') continue;
-                
+
                 fullText += dataStr;
-                
+
                 try {
                   const summaryMatch = fullText.match(/"summary"\s*:\s*"((?:[^"\\]|\\.)*)/);
                   if (summaryMatch && summaryMatch[1]) {
-                      setStreamingSummary(summaryMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"'));
+                    setStreamingSummary(summaryMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"'));
                   }
-                } catch(e) {}
+                } catch (e) { }
               }
             }
           }
         }
-        
+
         try {
           emotionData = JSON.parse(fullText);
-        } catch(e) {
+        } catch (e) {
           console.error("Failed to parse final JSON", fullText);
         }
       } else if (analyzeRes.status === 429) {
@@ -155,7 +155,7 @@ export default function Home() {
           summary: emotionData.summary
         }),
       });
-      
+
       setEntry("");
       setStreamingSummary("");
       fetchEntries();
@@ -171,48 +171,48 @@ export default function Home() {
 
   // Theme mapping for different ambiences
   const ambienceStyles: Record<string, any> = {
-  forest: {
-    bg1: "bg-emerald-500",
-    bg2: "bg-green-400",
-    text: "text-emerald-500",
-    button: "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/25",
-    chartColor: "#10b981", // emerald-500
-  },
-  ocean: {
-    bg1: "bg-blue-500",
-    bg2: "bg-cyan-400",
-    text: "text-blue-500",
-    button: "bg-blue-500 hover:bg-blue-600 shadow-blue-500/25",
-    chartColor: "#3b82f6", // blue-500
-  },
-  space: {
-    bg1: "bg-purple-500",
-    bg2: "bg-fuchsia-400",
-    text: "text-purple-500",
-    button: "bg-purple-500 hover:bg-purple-600 shadow-purple-500/25",
-    chartColor: "#a855f7", // purple-500
-  },
-  rain: {
-    bg1: "bg-slate-500",
-    bg2: "bg-gray-400",
-    text: "text-slate-500",
-    button: "bg-slate-500 hover:bg-slate-600 shadow-slate-500/25",
-    chartColor: "#64748b", // slate-500
-  },
-  cafe: {
-    bg1: "bg-amber-500",
-    bg2: "bg-orange-400",
-    text: "text-amber-500",
-    button: "bg-amber-500 hover:bg-amber-600 shadow-amber-500/25",
-    chartColor: "#f59e0b", // amber-500
-  }
-};
+    forest: {
+      bg1: "bg-emerald-500",
+      bg2: "bg-green-400",
+      text: "text-emerald-500",
+      button: "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/25",
+      chartColor: "#10b981", // emerald-500
+    },
+    ocean: {
+      bg1: "bg-blue-500",
+      bg2: "bg-cyan-400",
+      text: "text-blue-500",
+      button: "bg-blue-500 hover:bg-blue-600 shadow-blue-500/25",
+      chartColor: "#3b82f6", // blue-500
+    },
+    space: {
+      bg1: "bg-purple-500",
+      bg2: "bg-fuchsia-400",
+      text: "text-purple-500",
+      button: "bg-purple-500 hover:bg-purple-600 shadow-purple-500/25",
+      chartColor: "#a855f7", // purple-500
+    },
+    rain: {
+      bg1: "bg-slate-500",
+      bg2: "bg-gray-400",
+      text: "text-slate-500",
+      button: "bg-slate-500 hover:bg-slate-600 shadow-slate-500/25",
+      chartColor: "#64748b", // slate-500
+    },
+    cafe: {
+      bg1: "bg-amber-500",
+      bg2: "bg-orange-400",
+      text: "text-amber-500",
+      button: "bg-amber-500 hover:bg-amber-600 shadow-amber-500/25",
+      chartColor: "#f59e0b", // amber-500
+    }
+  };
 
   const currentStyle = ambienceStyles[ambience] || ambienceStyles.forest;
 
   return (
     <div className="min-h-screen font-sans selection:bg-emerald-500/20 transition-colors duration-700 relative z-0">
-      
+
       {/* Base background that covers everything behind gradients */}
       <div className="fixed inset-0 -z-30 bg-[#f8fafc] dark:bg-[#0f111a] transition-colors duration-1000" />
 
@@ -249,20 +249,20 @@ export default function Home() {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
+
         {/* Left Column: Editor */}
         <div className="lg:col-span-8 flex flex-col gap-6">
           <div className="bg-white/70 dark:bg-[#151822]/80 border border-white dark:border-white/10 rounded-3xl p-7 backdrop-blur-2xl shadow-xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden transition-all duration-300">
-            
+
             <div className="flex justify-between items-end mb-4">
               <h2 className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
                 <FileText className={`w-5 h-5 transition-colors duration-500 ${currentStyle.text}`} />
                 New Entry
               </h2>
-              
+
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">Ambience</span>
-                <select 
+                <select
                   value={ambience}
                   onChange={(e) => setAmbience(e.target.value)}
                   className="bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-1.5 text-sm font-medium outline-none focus:border-emerald-500/50 transition-colors appearance-none cursor-pointer text-slate-700 dark:text-slate-200"
@@ -364,7 +364,7 @@ export default function Home() {
                       </div>
                     </div>
                     <p className="text-slate-700 dark:text-slate-300 text-[15px] leading-relaxed mb-3 line-clamp-3">{item.text}</p>
-                    
+
                     {/* Collapsible Analysis Section */}
                     {expandedEntryId === item.id && item.summary && (
                       <div className="mt-4 p-4 rounded-xl bg-slate-100/50 dark:bg-black/30 border border-slate-200 dark:border-white/5 animate-in slide-in-from-top-2 fade-in duration-300">
@@ -377,7 +377,7 @@ export default function Home() {
                         </p>
                       </div>
                     )}
-                    
+
                     {item.keywords && item.keywords.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-4">
                         {item.keywords.map((kw: string, i: number) => (
@@ -400,26 +400,26 @@ export default function Home() {
               Mindset Insights
             </h3>
 
-             <div className="space-y-4">
-                <div className="bg-white/60 dark:bg-black/30 rounded-2xl p-5 border border-white dark:border-white/5 shadow-sm dark:shadow-none">
-                  <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">Total Sessions</div>
-                  <div className="text-3xl font-black text-slate-800 dark:text-white tracking-tighter">{insights?.totalEntries || 0}</div>
-                </div>
+            <div className="space-y-4">
+              <div className="bg-white/60 dark:bg-black/30 rounded-2xl p-5 border border-white dark:border-white/5 shadow-sm dark:shadow-none">
+                <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">Total Sessions</div>
+                <div className="text-3xl font-black text-slate-800 dark:text-white tracking-tighter">{insights?.totalEntries || 0}</div>
+              </div>
 
-                <div className="bg-white/60 dark:bg-black/30 rounded-2xl p-5 border border-white dark:border-white/5 shadow-sm dark:shadow-none">
-                  <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">Top Emotion</div>
-                  <div className={`text-2xl font-black tracking-tight capitalize transition-colors duration-500 ${currentStyle.text}`}>
-                    {insights?.topEmotion || "N/A"}
-                  </div>
+              <div className="bg-white/60 dark:bg-black/30 rounded-2xl p-5 border border-white dark:border-white/5 shadow-sm dark:shadow-none">
+                <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">Top Emotion</div>
+                <div className={`text-2xl font-black tracking-tight capitalize transition-colors duration-500 ${currentStyle.text}`}>
+                  {insights?.topEmotion || "N/A"}
                 </div>
+              </div>
 
-                <div className="bg-white/60 dark:bg-black/30 rounded-2xl p-5 border border-white dark:border-white/5 shadow-sm dark:shadow-none">
-                  <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">Preferred Ambience</div>
-                  <div className="text-lg font-bold text-slate-800 dark:text-slate-200 tracking-tight capitalize">
-                    {insights?.mostUsedAmbience || "N/A"}
-                  </div>
+              <div className="bg-white/60 dark:bg-black/30 rounded-2xl p-5 border border-white dark:border-white/5 shadow-sm dark:shadow-none">
+                <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">Preferred Ambience</div>
+                <div className="text-lg font-bold text-slate-800 dark:text-slate-200 tracking-tight capitalize">
+                  {insights?.mostUsedAmbience || "N/A"}
                 </div>
-             </div>
+              </div>
+            </div>
 
             {/* Mindset Timeline Chart */}
             {insights?.timeline && insights.timeline.length > 0 && (
@@ -433,26 +433,26 @@ export default function Home() {
                     <AreaChart data={insights.timeline} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor={currentStyle.chartColor} stopOpacity={0.4}/>
-                          <stop offset="95%" stopColor={currentStyle.chartColor} stopOpacity={0}/>
+                          <stop offset="5%" stopColor={currentStyle.chartColor} stopOpacity={0.4} />
+                          <stop offset="95%" stopColor={currentStyle.chartColor} stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <XAxis 
-                        dataKey="date" 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 12 }} 
+                      <XAxis
+                        dataKey="date"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 12 }}
                         dy={10}
                       />
-                      <YAxis 
-                        domain={[1, 5]} 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={false} 
+                      <YAxis
+                        domain={[1, 5]}
+                        axisLine={false}
+                        tickLine={false}
+                        tick={false}
                       />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: theme === 'dark' ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)', 
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: theme === 'dark' ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)',
                           borderRadius: '12px',
                           border: 'none',
                           boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
@@ -461,13 +461,13 @@ export default function Home() {
                         labelStyle={{ color: '#64748b', marginBottom: '4px' }}
                         formatter={(value: any, name: any, props: any) => [props.payload.emotion, 'State']}
                       />
-                      <Area 
-                        type="monotone" 
-                        dataKey="score" 
-                        stroke={currentStyle.chartColor} 
+                      <Area
+                        type="monotone"
+                        dataKey="score"
+                        stroke={currentStyle.chartColor}
                         strokeWidth={3}
-                        fillOpacity={1} 
-                        fill="url(#colorScore)" 
+                        fillOpacity={1}
+                        fill="url(#colorScore)"
                         activeDot={{ r: 6, fill: currentStyle.chartColor, stroke: '#fff', strokeWidth: 2 }}
                         style={{ transition: 'all 0.5s ease-in-out' }}
                       />
@@ -476,18 +476,18 @@ export default function Home() {
                 </div>
               </div>
             )}
-                {insights?.recentKeywords && insights.recentKeywords.length > 0 && (
-                  <div className="pt-2 border-t border-slate-200 dark:border-white/10">
-                    <div className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-3">Recurring Themes</div>
-                    <div className="flex flex-wrap gap-2">
-                      {insights.recentKeywords.map((kw: string, i: number) => (
-                        <span key={i} className="text-xs font-semibold px-3 py-1 bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-300 rounded-lg border border-blue-200 dark:border-blue-500/20">
-                          {kw}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
+            {insights?.recentKeywords && insights.recentKeywords.length > 0 && (
+              <div className="pt-2 border-t border-slate-200 dark:border-white/10">
+                <div className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-3">Recurring Themes</div>
+                <div className="flex flex-wrap gap-2">
+                  {insights.recentKeywords.map((kw: string, i: number) => (
+                    <span key={i} className="text-xs font-semibold px-3 py-1 bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-300 rounded-lg border border-blue-200 dark:border-blue-500/20">
+                      {kw}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
